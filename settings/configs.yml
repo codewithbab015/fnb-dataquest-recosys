@@ -1,0 +1,40 @@
+---
+project: customer-item recommendation system
+description: |
+  This project aims to buidl a customer-item recommendation system using hybrid machine learning techniques (clustering and Supervised learning).
+  The system will use customer and item data to provide personalized recommendations, enhancing user experience and engagement.
+version: 1.0.0
+techniques:
+  clustering:
+    - Kmeans
+    - Hierarchical clustering
+    - DBSCAN
+    - Gaussian Mixture Models
+    - Agglomerative clustering
+  supervised_learning:
+    - Decision Trees
+    - Random Forests
+    - Gradient Boosting Machines
+    - Support Vector Machines
+    - Neural Networks
+data_processing:
+  -profiling
+  - data_cleaning
+  - feature_engineering
+data_sources:
+  - customer_data
+  - item_data
+  - transaction_data
+  - user_feedback
+  - external_data
+evaluation_metrics:
+  clustering:
+    - silhouette_score
+    - Davies-Bouldin index
+    - Calinski-Harabasz index
+  supervised_learning:
+    - accuracy
+    - ROC-AUC
+    - precision
+    - recall
+    - F1-score
