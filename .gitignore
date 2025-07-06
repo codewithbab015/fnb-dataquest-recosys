@@ -12,3 +12,4 @@ models/
 README  Edit for profile.md
 git_control_flow.sh
 /data
+dvc_store_local/
