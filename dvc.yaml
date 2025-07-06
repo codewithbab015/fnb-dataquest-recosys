@@ -1,0 +1,9 @@
+stages:
+  process:
+    cmd: python src/engineer/process.py data/raw/dq_recsys_challenge_2025(in).csv
+      data/processed/processed_data.csv
+    deps:
+    - data/raw
+    - src/engineer/process.py
+    outs:
+    - data/processed/processed_data.csv
