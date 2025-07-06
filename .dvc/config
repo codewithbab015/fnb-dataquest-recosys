@@ -1,0 +1,7 @@
+[core]
+    remote = localremote
+['remote "myremote"']
+    url = gdrive://1Hp8sUHl9kR2Hqjbt4Y0NdkxVncouJrlA
+    gdrive_acknowledge_abuse = true
+['remote "localremote"']
+    url = ../dvc_store_local

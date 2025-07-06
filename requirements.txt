@@ -8,4 +8,6 @@ matplotlib
 seaborn
 optuna
 fastparquet
+dvc
+dvc[gdrive]
 
