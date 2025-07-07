@@ -3,19 +3,7 @@ Data processing pipeline for customer interaction data.
 Loads, cleans, visualizes, and saves processed data.
 """
 
-# import logging
-# import warnings
-# from argparse import ArgumentParser
-# from pathlib import Path
-
-# import matplotlib.pyplot as plt
-# import numpy as np
-# import pandas as pd
-# import seaborn as sns
-# import toml
-# from typing import Tuple
-# warnings.filterwarnings('ignore')
-from .utils_engineer import *
+from utils_engineer import *
 
 def setup_logging() -> logging.Logger:
     """Configure logging with file and console output."""
@@ -24,7 +12,7 @@ def setup_logging() -> logging.Logger:
     
     logging.basicConfig(
         level=logging.INFO,
-        # format="%(asctime)s - %(levelname)s - %(message)s",
+        format="%(asctime)s - %(levelname)s - %(message)s",
         handlers=[
             logging.StreamHandler(),
             logging.FileHandler(log_dir / "processing_summary.log", mode="w", encoding="utf-8"),

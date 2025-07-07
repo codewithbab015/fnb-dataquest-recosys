@@ -1,33 +1,33 @@
-INFO:__main__:Loading data from: data/raw/dq_recsys_challenge_2025(in).csv
-INFO:__main__:Total records: 400,000
-INFO:__main__:==================================================
-INFO:__main__:Missing values per column:
-INFO:__main__:  item_descrip: 173638
-INFO:__main__:==================================================
-INFO:__main__:Duplicated records: 30,317
-INFO:__main__:==================================================
-INFO:__main__:Data types:
-INFO:__main__:  idcol: int64
-INFO:__main__:  interaction: object
-INFO:__main__:  int_date: object
-INFO:__main__:  item: object
-INFO:__main__:  page: object
-INFO:__main__:  tod: object
-INFO:__main__:  item_type: object
-INFO:__main__:  item_descrip: object
-INFO:__main__:  segment: object
-INFO:__main__:  beh_segment: object
-INFO:__main__:  active_ind: object
-INFO:__main__:==================================================
-INFO:__main__:Data cleaned. Final shape: (369683, 10)
-INFO:__main__:Sample of cleaned data:
-INFO:__main__:
+2025-07-07 23:26:32,797 - INFO - Loading data from: data/raw/dq_recsys_challenge_2025(in).csv
+2025-07-07 23:26:33,407 - INFO - Total records: 400,000
+2025-07-07 23:26:33,408 - INFO - ==================================================
+2025-07-07 23:26:33,507 - INFO - Missing values per column:
+2025-07-07 23:26:33,507 - INFO -   item_descrip: 173638
+2025-07-07 23:26:33,508 - INFO - ==================================================
+2025-07-07 23:26:33,692 - INFO - Duplicated records: 30,317
+2025-07-07 23:26:33,692 - INFO - ==================================================
+2025-07-07 23:26:33,693 - INFO - Data types:
+2025-07-07 23:26:33,694 - INFO -   idcol: int64
+2025-07-07 23:26:33,695 - INFO -   interaction: object
+2025-07-07 23:26:33,696 - INFO -   int_date: object
+2025-07-07 23:26:33,696 - INFO -   item: object
+2025-07-07 23:26:33,697 - INFO -   page: object
+2025-07-07 23:26:33,697 - INFO -   tod: object
+2025-07-07 23:26:33,697 - INFO -   item_type: object
+2025-07-07 23:26:33,698 - INFO -   item_descrip: object
+2025-07-07 23:26:33,698 - INFO -   segment: object
+2025-07-07 23:26:33,699 - INFO -   beh_segment: object
+2025-07-07 23:26:33,700 - INFO -   active_ind: object
+2025-07-07 23:26:33,700 - INFO - ==================================================
+2025-07-07 23:26:35,090 - INFO - Data cleaned. Final shape: (369683, 10)
+2025-07-07 23:26:35,103 - INFO - Sample of cleaned data:
+2025-07-07 23:26:35,134 - INFO - 
   interaction   int_date        item     page        tod item_type   segment beh_segment   active_ind user_id
 0     display 2023-01-17  no_item_id  screen1  afternoon       all  segment3         b01  semi active     755
 1     display 2023-02-27  no_item_id  screen1  afternoon       all  segment1         b07  semi active    4521
 2     display 2023-02-18  no_item_id  screen1  afternoon       all  segment1         b07  semi active    4521
 3     display 2023-01-30  no_item_id  screen1    morning       all  segment1         b07  semi active    4521
 4       click 2023-02-05        ibab  screen1  afternoon    insure  segment1         b07  semi active    4521
-INFO:__main__:Processed data saved to /mnt/d/research-workspace/workx-projects/unified-devopsx/fnb-dataquest-recosys/data/processed/processed_fnb.csv
-INFO:__main__:Data size: 5000
-INFO:__main__:Pipeline completed successfully
+2025-07-07 23:26:35,186 - INFO - Processed data saved to /mnt/d/research-workspace/workx-projects/unified-devopsx/fnb-dataquest-recosys/data/processed/processed_fnb.csv
+2025-07-07 23:26:35,186 - INFO - Data size: 5000
+2025-07-07 23:26:35,187 - INFO - Pipeline completed successfully
