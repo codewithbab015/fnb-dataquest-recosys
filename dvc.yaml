@@ -8,7 +8,7 @@ stages:
     outs:
     - data/processed/processed_fnb.csv
   feature:
-    cmd: python src/engineer/feature.py --train data/training/train.csv --test data/training/test.csv
+    cmd: python src/engineer/feature.py " "
     deps:
     - data/processed/processed_fnb.csv
     - src/engineer/feature.py

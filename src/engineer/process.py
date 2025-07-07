@@ -143,28 +143,29 @@ def write_processed_data_to_csv(file_path: Path, df: pd.DataFrame) -> None:
 def cli_arguments() -> ArgumentParser:
     parser = ArgumentParser(description="Accepts command-line arguments required to process the data.")
     parser.add_argument("-r", "--raw", help="Raw dataset", required=True)
-    parser.add_argument("-o", "--output", help="Raw dataset", required=True)
+    parser.add_argument("-p", "--process", help="Raw dataset", required=True)
     
     args = parser.parse_args()
     
     return args
 
-
 # Run data pipeline
 def main() -> None:
-    filepath = Path.cwd() / "data/raw"
+    cli_parser = cli_arguments()
+    print(cli_parser)
+    # filepath = cli_parser.raw
+    
+    # data = loading_raw_data(filepath)
 
-    data = loading_raw_data(filepath)
+    # data = data_overview(data)
+    # data = data_precleaning(data)
 
-    data = data_overview(data)
-    data = data_precleaning(data)
+    # logger.info("Sample of cleaned data:")
+    # logger.info(f"\n{data.head()}")
 
-    logger.info("Sample of cleaned data:")
-    logger.info(f"\n{data.head()}")
-
-    output_path = Path.cwd() / "data/processed"
-    output_path.mkdir(parents=True, exist_ok=True)
-    write_processed_data_to_csv(output_path / "processed_fnb.csv", data)
+    # output_path = Path.cwd() / "data/processed"
+    # output_path.mkdir(parents=True, exist_ok=True)
+    # write_processed_data_to_csv(output_path / "processed_fnb.csv", data)
 
 
 if __name__ == "__main__":
