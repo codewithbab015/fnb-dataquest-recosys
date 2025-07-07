@@ -1,0 +1,47 @@
+schema: '2.0'
+stages:
+  process:
+    cmd: python src/engineer/process.py --raw 'data/raw/dq_recsys_challenge_2025(in).csv'
+      --process data/processed/processed_fnb.csv
+    deps:
+    - path: data/raw/dq_recsys_challenge_2025(in).csv
+      hash: md5
+      md5: a058b15deb247d03857332f52c0210a2
+      size: 35385393
+      isexec: true
+    - path: src/engineer/process.py
+      hash: md5
+      md5: ea2366098361335fa81e679b86868f7e
+      size: 8137
+      isexec: true
+    outs:
+    - path: data/processed/processed_fnb.csv
+      hash: md5
+      md5: ef7015e9dee42014b88bc01155bea545
+      size: 394282
+      isexec: true
+  feature:
+    cmd: python src/engineer/feature.py --process data/processed/processed_fnb.csv
+      --train data/training/train.csv --test data/training/test.csv
+    deps:
+    - path: data/processed/processed_fnb.csv
+      hash: md5
+      md5: ef7015e9dee42014b88bc01155bea545
+      size: 394282
+      isexec: true
+    - path: src/engineer/feature.py
+      hash: md5
+      md5: 86c338652c465d087721ab2be0dd2eca
+      size: 10086
+      isexec: true
+    outs:
+    - path: data/training/test.csv
+      hash: md5
+      md5: 677f89f64e770dfca2d49c6985af2a3b
+      size: 109893
+      isexec: true
+    - path: data/training/train.csv
+      hash: md5
+      md5: 2f90e497a25b989fd8c5ac05a91ea800
+      size: 439548
+      isexec: true

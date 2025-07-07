@@ -1,172 +1,244 @@
-# Library
-import os
+"""
+Data processing pipeline for customer interaction data.
+Loads, cleans, visualizes, and saves processed data.
+"""
+
+import logging
 import warnings
+from argparse import ArgumentParser
+from pathlib import Path
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from pathlib import Path
-import matplotlib.pyplot as plt
+import toml
+from typing import Tuple
 warnings.filterwarnings('ignore')
-import logging
-from datetime import datetime
-
-from pathlib import Path
-from datetime import datetime
-import pandas as pd
-import numpy as np
-import logging
-from argparse import ArgumentParser
-
-# Logging setup ──────────────────────────────
-log_dir = Path("logs")
-log_dir.mkdir(exist_ok=True)
-log_file = log_dir / "processing_summary.log"
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.StreamHandler(),
-        logging.FileHandler(log_file, mode="w", encoding="utf-8"),
-    ],
-)
-logger = logging.getLogger(__name__)
 
 
-# Load raw dataset from CSV in directory
-def loading_raw_data(filepath: Path) -> pd.DataFrame:
-    file = next(filepath.glob('*.csv'))
-    logger.info(f"Loading data from: {file}")
-    return pd.read_csv(file)
-
-
-# Quick data overview and cleaning
-def data_overview(data: pd.DataFrame) -> pd.DataFrame:
-    data['item'] = data['item'].replace('NONE', np.nan)
-
-    print(f"Total records: {len(data):,}")
-    print("*" * 50)
+def setup_logging() -> logging.Logger:
+    """Configure logging with file and console output."""
+    log_dir = Path("logs")
+    log_dir.mkdir(exist_ok=True)
     
+    logging.basicConfig(
+        level=logging.INFO,
+        # format="%(asctime)s - %(levelname)s - %(message)s",
+        handlers=[
+            logging.StreamHandler(),
+            logging.FileHandler(log_dir / "processing_summary.log", mode="w", encoding="utf-8"),
+        ],
+    )
+    return logging.getLogger(__name__)
+
+logger = setup_logging()
+
+def load_data(filepath: Path) -> pd.DataFrame:
+    """Load raw dataset from CSV file."""
+    logger.info(f"Loading data from: {filepath}")
+    return pd.read_csv(filepath)
+
+
+def analyze_data(data: pd.DataFrame) -> None:
+    """Print data overview statistics."""
+    logger.info(f"Total records: {len(data):,}")
+    logger.info("=" * 50)
+    
+    # Missing values
     missing = data.isna().sum()
-    print("Missing values per column:")
-    for col, val in missing.items():
-        print(f"  {col}: {val}")
-        
-    print("*" * 50)
+    if missing.sum() > 0:
+        logger.info("Missing values per column:")
+        for col, val in missing.items():
+            if val > 0:
+                logger.info(f"  {col}: {val}")
+    else:
+        logger.info("No missing values found")
     
-    duplicates = data.duplicated().sum()
-    print(f"Duplicated records: {duplicates:,}")
-    print("*" * 50)
+    logger.info("=" * 50)
+    logger.info(f"Duplicated records: {data.duplicated().sum():,}")
+    logger.info("=" * 50)
     
-    print("Data types:")
+    # Data types
+    logger.info("Data types:")
     for col, dtype in data.dtypes.items():
-        print(f"  {col}: {dtype}")
-        
-    print("*" * 50)
+        logger.info(f"  {col}: {dtype}")
+    logger.info("=" * 50)
+
+
+def clean_data(data: pd.DataFrame) -> pd.DataFrame:
+    """Clean and preprocess the dataset."""
+    # Handle missing values
+    data['item'] = data['item'].replace('NONE', np.nan).fillna('no_item_id')
+    
+    # Remove unnecessary columns and rename
+    data = data.drop(columns=['item_descrip'], errors='ignore')
+    if 'idcol' in data.columns:
+        data['user_id'] = data['idcol'].astype(str)
+        data = data.drop(columns=['idcol'])
+    
+    # Convert text to lowercase
+    text_columns = data.select_dtypes(include='object').columns
+    for col in text_columns:
+        if col != 'user_id':  # Keep user_id as is
+            data[col] = data[col].str.lower()
+    
+    # Convert date column
+    if 'int_date' in data.columns:
+        data['int_date'] = pd.to_datetime(data['int_date'], errors='coerce')
+    
+    # Remove duplicates
+    data = data.drop_duplicates(keep='first').reset_index(drop=True)
+    
+    logger.info(f"Data cleaned. Final shape: {data.shape}")
     return data
 
-    
-# Pre-cleaning of dataset
-def data_precleaning(data: pd.DataFrame) -> pd.DataFrame:
-    data = data.drop(columns='item_descrip')
-    data['user_id'] = data['idcol'].astype(str)
-    data = data.drop(columns='idcol')
 
-    for col in data.select_dtypes(include='object'):
-        data[col] = data[col].str.lower()
+def create_visualizations(data: pd.DataFrame) -> None:
+    """Generate visualizations for key features."""
+    plt.style.use('ggplot')
     
-    data['int_date'] = pd.to_datetime(data['int_date'], errors='coerce')
-    data = data.drop_duplicates(keep='first')
-    data['item'] = data['item'].fillna('no_item_id')
-
-    return data.reset_index(drop=True)
-    
-# Visualize dataset features
-def data_visualisation(data: pd.DataFrame) -> pd.DataFrame:
-    def plot_feature_distribution_count(df: pd.DataFrame, feature: str, palette: str = 'viridis') -> None:
-        plt.style.use('ggplot')
-        plt.figure(figsize=(8, 4))
-        order = df[feature].value_counts().index
-        sns.countplot(data=df, x=feature, order=order, palette=palette)
-        plt.xlabel(feature.capitalize())
-        plt.title(f'Distribution of {feature}')
-        plt.tight_layout(pad=2)
-        plt.show()
-
-    def plot_high_cardinal_features(df: pd.DataFrame, feature: str, color: str = 'red', top_n: int = 10) -> None:
+    def plot_top_categories(df: pd.DataFrame, feature: str, top_n: int = 10, 
+                           color: str = 'skyblue', title: str = None) -> None:
+        """Plot top N categories for high-cardinality features."""
         top_data = df[feature].value_counts().nlargest(top_n)
-        plt.style.use('ggplot')
-        plt.figure(figsize=(6, 6))
-        plt.barh(top_data.index, top_data.values, color=color)
+        
+        plt.figure(figsize=(10, 6))
+        plt.barh(range(len(top_data)), top_data.values, color=color)
+        plt.yticks(range(len(top_data)), top_data.index)
         plt.gca().invert_yaxis()
         plt.xlabel('Count')
-        plt.ylabel(feature.capitalize())
-        plt.title(f'Top {top_n} {feature.capitalize()} by Frequency')
-        plt.tight_layout(pad=2)
+        plt.ylabel(feature.replace('_', ' ').title())
+        plt.title(title or f'Top {top_n} {feature.replace("_", " ").title()}')
+        plt.tight_layout()
         plt.show()
-
-    def time_oriented_plot(df: pd.DataFrame) -> None:
-        df['int_date'] = pd.to_datetime(df['int_date'])
-        weekly = df['int_date'].dt.to_period('W-SUN').value_counts().sort_index()
+    
+    def plot_distribution(df: pd.DataFrame, feature: str, palette: str = 'viridis') -> None:
+        """Plot distribution for categorical features."""
+        plt.figure(figsize=(10, 6))
+        order = df[feature].value_counts().index
+        sns.countplot(data=df, x=feature, order=order, palette=palette)
+        plt.xlabel(feature.replace('_', ' ').title())
+        plt.title(f'Distribution of {feature.replace("_", " ").title()}')
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        plt.show()
+    
+    def plot_time_series(df: pd.DataFrame) -> None:
+        """Plot time series of interactions."""
+        if 'int_date' not in df.columns:
+            return
+            
+        df_temp = df.copy()
+        df_temp['int_date'] = pd.to_datetime(df_temp['int_date'])
+        
+        # Weekly aggregation
+        weekly = df_temp['int_date'].dt.to_period('W-SUN').value_counts().sort_index()
         weekly.index = weekly.index.to_timestamp()
+        
+        # Rolling average
         rolling_avg = weekly.rolling(window=4).mean()
-        plt.figure(figsize=(12, 5))
-        plt.plot(weekly.index, weekly.values, label='Weekly Count', marker='o', color='skyblue')
-        plt.plot(rolling_avg.index, rolling_avg.values, label='4-Week Rolling Avg', linestyle='--', color='orange')
-        plt.title('Weekly Customer Interactions with Rolling Average')
+        
+        plt.figure(figsize=(12, 6))
+        plt.plot(weekly.index, weekly.values, label='Weekly Count', 
+                marker='o', color='skyblue', linewidth=2)
+        plt.plot(rolling_avg.index, rolling_avg.values, 
+                label='4-Week Rolling Average', linestyle='--', color='orange', linewidth=2)
+        
+        plt.title('Weekly Customer Interactions')
         plt.xlabel('Week')
         plt.ylabel('Interaction Count')
         plt.xticks(rotation=45)
         plt.legend()
+        plt.grid(True, alpha=0.3)
         plt.tight_layout()
         plt.show()
-
-    plot_high_cardinal_features(data, 'item')
-    plot_high_cardinal_features(data, 'beh_segment', 'blue')
-    plot_feature_distribution_count(data, 'active_ind')
-    plot_feature_distribution_count(data, 'interaction')
-    plot_feature_distribution_count(data, 'segment')
-    plot_feature_distribution_count(data, 'item_type')
-    plot_feature_distribution_count(data, 'tod')
-    plot_feature_distribution_count(data, 'page')
-    time_oriented_plot(data)
-
-    return data
-
-# Save DataFrame as CSV in processed data folder
-def write_processed_data_to_csv(file_path: Path, df: pd.DataFrame) -> None:
-    df.to_csv(file_path, index=False)
-    logger.info(f"Processed data saved to {file_path.as_posix()}")
-
-
-# CLI Input Arguments
-def cli_arguments() -> ArgumentParser:
-    parser = ArgumentParser(description="Accepts command-line arguments required to process the data.")
-    parser.add_argument("-r", "--raw", help="Raw dataset", required=True)
-    parser.add_argument("-p", "--process", help="Raw dataset", required=True)
     
-    args = parser.parse_args()
+    # Generate plots for different feature types
+    high_cardinality_features = ['item', 'beh_segment']
+    categorical_features = ['active_ind', 'interaction', 'segment', 'item_type', 'tod', 'page']
     
-    return args
+    for feature in high_cardinality_features:
+        if feature in data.columns:
+            plot_top_categories(data, feature)
+    
+    for feature in categorical_features:
+        if feature in data.columns:
+            plot_distribution(data, feature)
+    
+    plot_time_series(data)
 
-# Run data pipeline
+
+def save_data(data: pd.DataFrame, output_path: Path) -> None:
+    """Save processed data to CSV file."""
+    working_dir = Path.cwd()
+    filepath = (working_dir / output_path).resolve()
+    
+    filepath.parent.mkdir(parents=True, exist_ok=True)
+    
+    data.to_csv(filepath, index=False)
+    logger.info(f"Processed data saved to {filepath}")
+
+
+def parse_arguments() -> ArgumentParser:
+    """Parse command line arguments."""
+    parser = ArgumentParser(description="Process customer interaction data")
+    parser.add_argument("-r", "--raw", required=True, help="Path to raw dataset CSV file")
+    parser.add_argument("-p", "--process", required=True, help="Path to output directory for processed data")
+    # parser.add_argument("--no_viz", action="store_true", help="Skip visualization generation")
+    
+    return parser.parse_args()
+
+def load_config(filepath: str) -> Tuple[int, bool]:
+    """Load and parse configuration from TOML file."""
+    config = toml.load(filepath)
+    
+    size = config["DATA"]["size"]
+    is_visual = config["DATA"]["is_visual"]
+    
+    return size, is_visual
+
+def process_data_size(data, size: int) -> object:
+    """Process data based on size configuration."""
+    if size == 0:
+        return data
+    return data[:size]
+
 def main() -> None:
-    cli_parser = cli_arguments()
-    print(cli_parser)
-    # filepath = cli_parser.raw
+    """Main processing pipeline."""
+
+    args = parse_arguments()
     
-    # data = loading_raw_data(filepath)
-
-    # data = data_overview(data)
-    # data = data_precleaning(data)
-
-    # logger.info("Sample of cleaned data:")
-    # logger.info(f"\n{data.head()}")
-
-    # output_path = Path.cwd() / "data/processed"
-    # output_path.mkdir(parents=True, exist_ok=True)
-    # write_processed_data_to_csv(output_path / "processed_fnb.csv", data)
-
+    try:
+        # Load configuration
+        data_size, is_visual = load_config("data.config.toml")
+        
+        # Load and process data
+        data = load_data(Path(args.raw))
+        analyze_data(data)
+        data = clean_data(data)
+        
+        # Log sample
+        logger.info("Sample of cleaned data:")
+        logger.info(f"\n{data.head()}")
+        
+        # Generate visualizations if enabled
+        if is_visual:
+            print("Creating visualizations...")
+            # create_visualizations(data)
+        
+        # Process and save data
+        processed_data = process_data_size(data, data_size)
+        save_data(processed_data, Path(args.process))
+        
+        # Log completion
+        final_size = len(processed_data)
+        logger.info(f"Data size: {final_size}")
+        logger.info("Pipeline completed successfully")
+        
+    except Exception as e:
+        logger.error(f"Pipeline failed: {str(e)}")
+        raise
 
 if __name__ == "__main__":
     main()

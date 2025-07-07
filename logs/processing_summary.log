@@ -1,10 +1,33 @@
-2025-07-07 02:04:50,426 - INFO - Loading data from: /mnt/d/research-workspace/workx-projects/unified-devopsx/fnb-dataquest-recosys/data/raw/dq_recsys_challenge_2025(in).csv
-2025-07-07 02:04:53,582 - INFO - Sample of cleaned data:
-2025-07-07 02:04:53,728 - INFO - 
+INFO:__main__:Loading data from: data/raw/dq_recsys_challenge_2025(in).csv
+INFO:__main__:Total records: 400,000
+INFO:__main__:==================================================
+INFO:__main__:Missing values per column:
+INFO:__main__:  item_descrip: 173638
+INFO:__main__:==================================================
+INFO:__main__:Duplicated records: 30,317
+INFO:__main__:==================================================
+INFO:__main__:Data types:
+INFO:__main__:  idcol: int64
+INFO:__main__:  interaction: object
+INFO:__main__:  int_date: object
+INFO:__main__:  item: object
+INFO:__main__:  page: object
+INFO:__main__:  tod: object
+INFO:__main__:  item_type: object
+INFO:__main__:  item_descrip: object
+INFO:__main__:  segment: object
+INFO:__main__:  beh_segment: object
+INFO:__main__:  active_ind: object
+INFO:__main__:==================================================
+INFO:__main__:Data cleaned. Final shape: (369683, 10)
+INFO:__main__:Sample of cleaned data:
+INFO:__main__:
   interaction   int_date        item     page        tod item_type   segment beh_segment   active_ind user_id
 0     display 2023-01-17  no_item_id  screen1  afternoon       all  segment3         b01  semi active     755
 1     display 2023-02-27  no_item_id  screen1  afternoon       all  segment1         b07  semi active    4521
 2     display 2023-02-18  no_item_id  screen1  afternoon       all  segment1         b07  semi active    4521
 3     display 2023-01-30  no_item_id  screen1    morning       all  segment1         b07  semi active    4521
 4       click 2023-02-05        ibab  screen1  afternoon    insure  segment1         b07  semi active    4521
-2025-07-07 02:04:56,239 - INFO - Processed data saved to /mnt/d/research-workspace/workx-projects/unified-devopsx/fnb-dataquest-recosys/data/processed/processed_fnb.csv
+INFO:__main__:Processed data saved to /mnt/d/research-workspace/workx-projects/unified-devopsx/fnb-dataquest-recosys/data/processed/processed_fnb.csv
+INFO:__main__:Data size: 5000
+INFO:__main__:Pipeline completed successfully

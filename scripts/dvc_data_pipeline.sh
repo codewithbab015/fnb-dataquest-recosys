@@ -18,9 +18,7 @@ dvc stage add --force --name process \
     --deps "src/engineer/process.py" \
     --deps "data/raw/${RAW_FILE}" \
     --outs "data/processed/${PROCESS_FILE}" \
-    python "src/engineer/process.py" \
-        --raw "data/raw/${RAW_FILE}" \
-        --process "data/processed/${PROCESS_FILE}"
+    python src/engineer/process.py --raw "'data/raw/${RAW_FILE}'" --process "data/processed/${PROCESS_FILE}"
 
 # Stage 2: Feature engineering
 echo "Running feature engineering stage..."
@@ -29,10 +27,7 @@ dvc stage add --force --name feature \
     --deps "data/processed/${PROCESS_FILE}" \
     --outs "data/training/${TRAIN_FILE}" \
     --outs "data/training/${TEST_FILE}" \
-    python "src/engineer/feature.py" \ 
-        --process "data/processed/${PROCESS_FILE}" \
-        --train "data/training/${TRAIN_FILE}" \
-        --test "data/training/${TEST_FILE}"
+    python src/engineer/feature.py --process "data/processed/${PROCESS_FILE}" --train "data/training/${TRAIN_FILE}" --test "data/training/${TEST_FILE}"
 
 # Cleanup
 echo "Deactivating Python virtual environment..."
