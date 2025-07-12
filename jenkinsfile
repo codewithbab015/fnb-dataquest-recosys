@@ -416,15 +416,23 @@ pipeline {
     
     post {
         always {
-            // Archive artifacts
             archiveArtifacts artifacts: 'reports/**/*', allowEmptyArchive: true
             archiveArtifacts artifacts: 'models/**/*', allowEmptyArchive: true
-            
-            // Publish test results
-            publishTestResults testResultsPattern: '**/test-results.xml'
-            publishCoverage adapters: [coberturaAdapter('coverage.xml')]
-            
-            // Clean up
+
+            script {
+                if (fileExists('**/test-results.xml')) {
+                    publishTestResults testResultsPattern: '**/test-results.xml'
+                } else {
+                    echo "🟡 No test result files found, skipping test results publishing"
+                }
+
+                if (fileExists('coverage.xml')) {
+                    publishCoverage adapters: [coberturaAdapter('coverage.xml')]
+                } else {
+                    echo "🟡 No coverage report found, skipping coverage publishing"
+                }
+            }
+
             sh '''
                 echo "🧹 Cleaning up workspace"
                 # conda deactivate || true
