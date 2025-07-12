@@ -1,3 +1,4 @@
+
 pipeline {
     agent any
     
@@ -25,13 +26,7 @@ pipeline {
         stage('Load Pipeline Libraries') {
             steps {
                 script {
-                    // Load shared libraries dynamically from workspace
-                    // Ensure that these libraries existing in the jenkins/ folder
-                    // utilsLib  = load "jenkins/utils.groovy"
-                    // testLib   = load "jenkins/test.groovy"
-                    // buildLib  = load "jenkins/build.groovy"
-                    // deployLib = load "jenkins/deploy.groovy"
-
+                    def utilsLib = load "jenkins/utils.groovy"
                     echo "✅ All pipeline libraries loaded successfully"
                 }
             }
@@ -40,15 +35,7 @@ pipeline {
         stage("🔄 Source Control") {
             steps {
                 script {
-                    // Clone repository with specific branch/tag
-                    checkout([
-                        $class: 'GitSCM',
-                        branches: [[name: '*/main']],
-                        userRemoteConfigs: [[
-                            url: "${GIT_URL}",
-                            credentialsId: "${GIT_CREDENTIALS_ID}"
-                        ]]
-                    ])
+                    utilsLib.cloneRepository(env.GIT_URL, env.GIT_CREDENTIALS_ID)
                 }
                 sh '''
                     echo "✅ Repository cloned successfully"
@@ -60,20 +47,9 @@ pipeline {
         
         stage("Setup Env") {
             steps {
-                sh '''
-                    echo "🐍 Setting up Python environment"
-                    # Create conda environment if not exists
-                    # conda create -n ${VENV_DIR} python=${PYTHON_VERSION} -y || true
-                    #conda activate ${VENV_DIR}
-                    
-                    # Install dependencies
-                    # pip install -r requirements.txt
-                    
-                    # Install development dependencies
-                    # pip install pytest black flake8 pre-commit
-                    
-                    echo "✅ Environment setup complete"
-                '''
+                script{
+                    utilsLib.pythonEnvironment(env.VENV_DIR)
+                }
             }
         }
         

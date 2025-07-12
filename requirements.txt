@@ -3,10 +3,10 @@ lightgbm
 scikit-learn
 pandas
 numpy
-scipy
 matplotlib
 seaborn
 optuna
 fastparquet
 dvc[all]
+mlflow
 

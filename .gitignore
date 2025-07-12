@@ -15,3 +15,4 @@ git_control_flow.sh
 dvc_store_local/
 notebooks/
 __pycache__/
+jenkinsfile copy
