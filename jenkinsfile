@@ -29,7 +29,7 @@ pipeline {
                     utilsLib.cloneRepository(env.GIT_URL, env.GIT_CREDENTIALS_ID)
                 
                 }
-                sh '''
+                sh '''#!/bin/env
                     echo "✅ Repository cloned successfully"
                     echo "📊 Commit: $(git rev-parse HEAD)"
                     echo "🌿 Branch: $(git branch --show-current)"
