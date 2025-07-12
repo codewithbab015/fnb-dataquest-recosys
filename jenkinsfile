@@ -1,33 +1,33 @@
-
 pipeline {
     agent any
-    
+   
     environment {
         // Repository configuration
         GIT_URL = 'https://github.com/codewithbab015/fnb-dataquest-recosys.git'
         GIT_CREDENTIALS_ID = 'jenkins_access_id'
-        
+       
         // MLOps tool configurations
         MLFLOW_TRACKING_URI = 'http://mlflow-server:5000'
-
         // Docker Hub configuration
         DOCKERHUB_CREDENTIALS_ID = 'docker_access_id'
         DOCKER_USERNAME = 'mrbaloyin'
         DOCKER_IMG = 'recosys-model' //Change the name of the image tag as needed
         VERSION = 'latest'
-
         // Python environment
         PIP_CACHE_DIR = "${WORKSPACE}/.pip_cache"
         VENV_DIR = "${WORKSPACE}/.venv"
     }
     
     stages {
-
         stage("🔄 Source Control") {
             steps {
                 script {
+                    // Load utils library
                     def utilsLib = load "jenkins/utils.groovy"
+                    
+                    // Clone repository
                     utilsLib.cloneRepository(env.GIT_URL, env.GIT_CREDENTIALS_ID)
+                
                 }
                 sh '''
                     echo "✅ Repository cloned successfully"
@@ -36,66 +36,75 @@ pipeline {
                 '''
             }
         }
-        
-        stage("Setup Env") {
+       
+        stage("🐍 Setup Python Environment") {
             steps {
-                script{
+                script {
+                    // Reload utils library (necessary for each stage)
                     def utilsLib = load "jenkins/utils.groovy"
                     utilsLib.pythonEnvironment(env.VENV_DIR)
                 }
             }
         }
     }
-    
+   
     post {
         always {
-            archiveArtifacts artifacts: 'reports/**/*', allowEmptyArchive: true
-            archiveArtifacts artifacts: 'models/**/*', allowEmptyArchive: true
-
             script {
+                // Archive artifacts only if they exist
+                if (fileExists('reports/')) {
+                    archiveArtifacts artifacts: 'reports/**/*', allowEmptyArchive: true
+                }
+                if (fileExists('models/')) {
+                    archiveArtifacts artifacts: 'models/**/*', allowEmptyArchive: true
+                }
+                
+                // Publish test results if they exist
                 if (fileExists('**/test-results.xml')) {
                     publishTestResults testResultsPattern: '**/test-results.xml'
                 } else {
                     echo "🟡 No test result files found, skipping test results publishing"
                 }
-
+                
+                // Publish coverage if it exists
                 if (fileExists('coverage.xml')) {
                     publishCoverage adapters: [coberturaAdapter('coverage.xml')]
                 } else {
                     echo "🟡 No coverage report found, skipping coverage publishing"
                 }
             }
-
             sh '''
                 echo "🧹 Cleaning up workspace"
-                # conda deactivate || true
-                # docker system prune -f || true
+                # Remove virtual environment
+                rm -rf venv || true
+                # Clean up pip cache
+                rm -rf ${PIP_CACHE_DIR} || true
             '''
         }
-        
+       
         success {
             echo "✅ Pipeline completed successfully!"
-            // Send success notification
             sh '''
                 echo "📧 Sending success notification"
+                # Add your notification logic here
                 # python src/notifications/send_notification.py --status=success
             '''
         }
-        
+       
         failure {
             echo "❌ Pipeline failed!"
-            // Send failure notification
             sh '''
                 echo "📧 Sending failure notification"
+                # Add your notification logic here
                 # python src/notifications/send_notification.py --status=failure
             '''
         }
-        
+       
         unstable {
             echo "⚠️ Pipeline completed with warnings"
-            // Send warning notification
             sh '''
                 echo "📧 Sending warning notification"
+                # Add your notification logic here
                 # python src/notifications/send_notification.py --status=warning
             '''
         }
