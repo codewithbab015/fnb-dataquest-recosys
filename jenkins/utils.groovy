@@ -21,9 +21,11 @@ def pythonEnvironment(venv) {
     
     sh """
         echo "🐍 Setting up Python environment"
-        python3 --version
         python3 -m venv ${venv}
         source ${venv}/bin/activate
+
+        version=$(python3 --version)
+        echo "Python version: ${version}"
         python3 -m pip install --upgrade pip
         pip install -r requirements.txt
         echo "✅ Environment setup complete"
