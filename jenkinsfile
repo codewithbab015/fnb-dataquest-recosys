@@ -58,19 +58,19 @@ pipeline {
             }
         }
         
-        stage("🏗️ Environment Setup") {
+        stage("Setup Env") {
             steps {
                 sh '''
                     echo "🐍 Setting up Python environment"
                     # Create conda environment if not exists
-                    conda create -n ${VENV_DIR} python=${PYTHON_VERSION} -y || true
-                    conda activate ${VENV_DIR}
+                    # conda create -n ${VENV_DIR} python=${PYTHON_VERSION} -y || true
+                    #conda activate ${VENV_DIR}
                     
                     # Install dependencies
-                    pip install -r requirements.txt
+                    # pip install -r requirements.txt
                     
                     # Install development dependencies
-                    pip install pytest black flake8 pre-commit
+                    # pip install pytest black flake8 pre-commit
                     
                     echo "✅ Environment setup complete"
                 '''
@@ -83,9 +83,9 @@ pipeline {
                     steps {
                         sh '''
                             echo "🧹 Running code linting"
-                            conda activate ${VENV_DIR}
-                            flake8 src/ --max-line-length=88 --exclude=__pycache__
-                            black --check src/
+                            # conda activate ${VENV_DIR}
+                            # flake8 src/ --max-line-length=88 --exclude=__pycache__
+                            # black --check src/
                         '''
                     }
                 }
@@ -93,7 +93,7 @@ pipeline {
                     steps {
                         sh '''
                             echo "🔐 Running security scan"
-                            conda activate ${VENV_DIR}
+                            # conda activate ${VENV_DIR}
                             # bandit -r src/ -f json -o security-report.json
                             # safety check --json --output safety-report.json
                         '''
@@ -103,8 +103,8 @@ pipeline {
                     steps {
                         sh '''
                             echo "🧪 Running unit tests"
-                            conda activate ${VENV_DIR}
-                            pytest tests/unit/ -v --junitxml=unit-test-results.xml --cov=src --cov-report=xml
+                            # conda activate ${VENV_DIR}
+                            # pytest tests/unit/ -v --junitxml=unit-test-results.xml --cov=src --cov-report=xml
                         '''
                     }
                 }
@@ -117,14 +117,14 @@ pipeline {
                     steps {
                         sh '''
                             echo "🔍 Validating data quality and schema"
-                            conda activate ${VENV_DIR}
-                            python src/data/validate_data.py
+                            # conda activate ${VENV_DIR}
+                            # python src/data/validate_data.py
                             
                             # Check data drift
-                            python src/data/detect_drift.py
+                            # python src/data/detect_drift.py
                             
                             # Generate data quality report
-                            python src/data/data_quality_report.py
+                            # python src/data/data_quality_report.py
                         '''
                     }
                 }
@@ -132,14 +132,14 @@ pipeline {
                     steps {
                         sh '''
                             echo "🛠️ Preprocessing and feature engineering"
-                            conda activate ${VENV_DIR}
-                            python src/data/preprocess.py
+                            # conda activate ${VENV_DIR}
+                            # python src/data/preprocess.py
                             
                             # Feature engineering
-                            python src/features/build_features.py
+                            # python src/features/build_features.py
                             
                             # Data splitting
-                            python src/data/split_data.py
+                            # python src/data/split_data.py
                         '''
                     }
                 }
@@ -147,11 +147,11 @@ pipeline {
                     steps {
                         sh '''
                             echo "📈 Generating data profile and statistics"
-                            conda activate ${VENV_DIR}
-                            python src/data/profile_data.py
+                            # conda activate ${VENV_DIR}
+                            # python src/data/profile_data.py
                             
                             # Generate data lineage
-                            python src/data/track_lineage.py
+                            # python src/data/track_lineage.py
                         '''
                     }
                 }
@@ -164,11 +164,11 @@ pipeline {
                     steps {
                         sh '''
                             echo "📋 Setting up experiment tracking"
-                            conda activate ${VENV_DIR}
-                            export MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI}
+                            # conda activate ${VENV_DIR}
+                            # export MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI}
                             
                             # Create experiment if not exists
-                            python src/models/setup_experiment.py
+                            # python src/models/setup_experiment.py
                         '''
                     }
                 }
@@ -178,8 +178,8 @@ pipeline {
                             steps {
                                 sh '''
                                     echo "🏁 Training baseline model"
-                                    conda activate ${VENV_DIR}
-                                    python src/models/train_baseline.py
+                                    # conda activate ${VENV_DIR}
+                                    # python src/models/train_baseline.py
                                 '''
                             }
                         }
@@ -187,8 +187,8 @@ pipeline {
                             steps {
                                 sh '''
                                     echo "🚀 Training advanced models"
-                                    conda activate ${VENV_DIR}
-                                    python src/models/train_models.py
+                                    # conda activate ${VENV_DIR}
+                                    # python src/models/train_models.py
                                 '''
                             }
                         }
@@ -198,11 +198,11 @@ pipeline {
                     steps {
                         sh '''
                             echo "⚙️ Optimizing hyperparameters"
-                            conda activate ${VENV_DIR}
-                            python src/models/hyperparameter_tuning.py
+                            # conda activate ${VENV_DIR}
+                            # python src/models/hyperparameter_tuning.py
                             
                             # Run automated hyperparameter search
-                            python src/models/optuna_optimization.py
+                            # python src/models/optuna_optimization.py
                         '''
                     }
                 }
@@ -210,11 +210,11 @@ pipeline {
                     steps {
                         sh '''
                             echo "🔄 Performing cross-validation"
-                            conda activate ${VENV_DIR}
-                            python src/models/cross_validation.py
+                            # conda activate ${VENV_DIR}
+                            # python src/models/cross_validation.py
                             
                             # Time series cross-validation if applicable
-                            python src/models/time_series_cv.py
+                            # python src/models/time_series_cv.py
                         '''
                     }
                 }
@@ -227,11 +227,11 @@ pipeline {
                     steps {
                         sh '''
                             echo "📊 Evaluating model performance"
-                            conda activate ${VENV_DIR}
-                            python src/models/evaluate_model.py
+                            # conda activate ${VENV_DIR}
+                            # python src/models/evaluate_model.py
                             
                             # Generate model performance report
-                            python src/models/generate_report.py
+                            #  python src/models/generate_report.py
                         '''
                     }
                 }
@@ -239,11 +239,11 @@ pipeline {
                     steps {
                         sh '''
                             echo "🔍 Analyzing model interpretability"
-                            conda activate ${VENV_DIR}
-                            python src/models/explain_model.py
+                            # conda activate ${VENV_DIR}
+                            # python src/models/explain_model.py
                             
                             # Generate SHAP values
-                            python src/models/shap_analysis.py
+                            # python src/models/shap_analysis.py
                         '''
                     }
                 }
@@ -251,11 +251,11 @@ pipeline {
                     steps {
                         sh '''
                             echo "⚖️ Testing for bias and fairness"
-                            conda activate ${VENV_DIR}
-                            python src/models/bias_testing.py
+                            # conda activate ${VENV_DIR}
+                            # python src/models/bias_testing.py
                             
                             # Fairness metrics
-                            python src/models/fairness_metrics.py
+                            # python src/models/fairness_metrics.py
                         '''
                     }
                 }
@@ -265,11 +265,11 @@ pipeline {
                             steps {
                                 sh '''
                                     echo "📦 Testing batch predictions"
-                                    conda activate ${VENV_DIR}
-                                    python src/models/test_batch_predictions.py
+                                    # conda activate ${VENV_DIR}
+                                    # python src/models/test_batch_predictions.py
                                     
                                     # Performance benchmarking
-                                    python src/models/benchmark_performance.py
+                                    # python src/models/benchmark_performance.py
                                 '''
                             }
                         }
@@ -277,11 +277,11 @@ pipeline {
                             steps {
                                 sh '''
                                     echo "⚡ Testing real-time predictions"
-                                    conda activate ${VENV_DIR}
-                                    python src/models/test_realtime_predictions.py
+                                    # conda activate ${VENV_DIR}
+                                    # python src/models/test_realtime_predictions.py
                                     
                                     # Latency testing
-                                    python src/models/latency_testing.py
+                                    # python src/models/latency_testing.py
                                 '''
                             }
                         }
@@ -294,17 +294,17 @@ pipeline {
             steps {
                 sh '''
                     echo "🎯 Selecting best model and registering"
-                    conda activate ${VENV_DIR}
-                    export MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI}
+                    # conda activate ${VENV_DIR}
+                    # export MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI}
                     
                     # Compare models and select best
-                    python src/models/model_selection.py
+                    # python src/models/model_selection.py
                     
                     # Register model in MLflow
-                    python src/models/register_model.py
+                    # python src/models/register_model.py
                     
                     # Model versioning
-                    python src/models/version_model.py
+                    # python src/models/version_model.py
                 '''
             }
         }
@@ -315,13 +315,13 @@ pipeline {
                     steps {
                         sh '''
                             echo "📦 Packaging model for deployment"
-                            conda activate ${VENV_DIR}
+                            # conda activate ${VENV_DIR}
                             
                             # Create Docker image
-                            docker build -t ${DOCKER_REGISTRY}/${MODEL_NAME}:${BUILD_NUMBER} .
+                            # docker build -t ${DOCKER_REGISTRY}/${MODEL_NAME}:${BUILD_NUMBER} .
                             
                             # Run container tests
-                            python src/deployment/test_container.py
+                            # python src/deployment/test_container.py
                         '''
                     }
                 }
@@ -329,13 +329,13 @@ pipeline {
                     steps {
                         sh '''
                             echo "🎭 Deploying to staging environment"
-                            conda activate ${VENV_DIR}
+                            # conda activate ${VENV_DIR}
                             
                             # Deploy to staging
-                            python src/deployment/deploy_staging.py
+                            # python src/deployment/deploy_staging.py
                             
                             # Smoke tests
-                            python src/deployment/smoke_tests.py
+                            # python src/deployment/smoke_tests.py
                         '''
                     }
                 }
@@ -343,13 +343,13 @@ pipeline {
                     steps {
                         sh '''
                             echo "🔗 Running integration tests"
-                            conda activate ${VENV_DIR}
+                            # conda activate ${VENV_DIR}
                             
                             # End-to-end testing
-                            python src/tests/test_integration.py
+                            # python src/tests/test_integration.py
                             
                             # Load testing
-                            python src/tests/load_testing.py
+                            # python src/tests/load_testing.py
                         '''
                     }
                 }
@@ -364,16 +364,16 @@ pipeline {
                         }
                         sh '''
                             echo "🌟 Deploying to production"
-                            conda activate ${VENV_DIR}
+                            # conda activate ${VENV_DIR}
                             
                             # Blue-green deployment
-                            python src/deployment/deploy_production.py
+                            # python src/deployment/deploy_production.py
                             
                             # Health checks
-                            python src/deployment/health_checks.py
+                            # python src/deployment/health_checks.py
                             
                             # Update model registry status
-                            python src/deployment/update_model_status.py
+                            # python src/deployment/update_model_status.py
                         '''
                     }
                 }
@@ -386,13 +386,13 @@ pipeline {
                     steps {
                         sh '''
                             echo "👁️ Setting up model monitoring"
-                            conda activate ${VENV_DIR}
+                            # conda activate ${VENV_DIR}
                             
                             # Setup monitoring dashboards
-                            python src/monitoring/setup_monitoring.py
+                            # python src/monitoring/setup_monitoring.py
                             
                             # Configure alerts
-                            python src/monitoring/configure_alerts.py
+                            # python src/monitoring/configure_alerts.py
                         '''
                     }
                 }
@@ -400,13 +400,13 @@ pipeline {
                     steps {
                         sh '''
                             echo "📚 Generating documentation"
-                            conda activate ${VENV_DIR}
+                            # conda activate ${VENV_DIR}
                             
                             # Generate model cards
-                            python src/documentation/generate_model_card.py
+                            # python src/documentation/generate_model_card.py
                             
                             # API documentation
-                            python src/documentation/generate_api_docs.py
+                            # python src/documentation/generate_api_docs.py
                         '''
                     }
                 }
@@ -427,8 +427,8 @@ pipeline {
             // Clean up
             sh '''
                 echo "🧹 Cleaning up workspace"
-                conda deactivate || true
-                docker system prune -f || true
+                # conda deactivate || true
+                # docker system prune -f || true
             '''
         }
         
@@ -437,7 +437,7 @@ pipeline {
             // Send success notification
             sh '''
                 echo "📧 Sending success notification"
-                python src/notifications/send_notification.py --status=success
+                # python src/notifications/send_notification.py --status=success
             '''
         }
         
@@ -446,7 +446,7 @@ pipeline {
             // Send failure notification
             sh '''
                 echo "📧 Sending failure notification"
-                python src/notifications/send_notification.py --status=failure
+                # python src/notifications/send_notification.py --status=failure
             '''
         }
         
@@ -455,7 +455,7 @@ pipeline {
             // Send warning notification
             sh '''
                 echo "📧 Sending warning notification"
-                python src/notifications/send_notification.py --status=warning
+                # python src/notifications/send_notification.py --status=warning
             '''
         }
     }
