@@ -1,8 +1,9 @@
-/* Groovy utils functions
-Consist of methods that are used outside of stages
+/* 
+   Groovy utility functions used across pipeline stages.
 */
-// Clone repository with specific branch/tag
-def cloneRepository(gitUrl, credentialsId, branch = '*/main'){
+
+// Clone the Git repository using provided credentials and branch (default: main)
+def cloneRepository(gitUrl, credentialsId, branch = '*/main') {
     checkout([
         $class: 'GitSCM',
         branches: [[name: branch]],
@@ -13,26 +14,35 @@ def cloneRepository(gitUrl, credentialsId, branch = '*/main'){
     ])
 }
 
-// Setup Python Environment
+// Set up Python virtual environment and install dependencies using pip cache
 def pythonEnvironment(venv) {
     if (!fileExists("requirements.txt")) {
-        error "Requirements file does not exist!"
+        error "The requirements.txt file is missing. Unable to set up Python environment."
     }
-   
-    // Create virtual environment
-    sh "python3 -m venv ${venv}"
-    
-    // Install dependencies
-    sh """#!/bin/env
+
+    sh """
+        echo "Creating Python virtual environment at ${venv}"
+        python3 -m venv ${venv}
+
+        echo "Activating virtual environment"
         source ${venv}/bin/activate
-        python3 --version
+
+        echo "Setting PIP cache directory to /cache"
+        export PIP_CACHE_DIR=/cache
+
+        echo "Upgrading pip"
         python3 -m pip install --upgrade pip
-        pip install -r requirements.txt
-        echo "✅ Environment setup complete"
+
+        echo "Installing Python dependencies from requirements.txt"
+        pip install --cache-dir=\$PIP_CACHE_DIR -r requirements.txt
+
+        echo "Python environment setup complete"
     """
 }
 
 return this
+
+
 
 // Load shared libraries dynamically from workspace
 // Ensure that these libraries existing in the jenkins/ folder

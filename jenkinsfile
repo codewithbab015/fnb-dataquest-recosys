@@ -1,110 +1,103 @@
 pipeline {
-    agent any
-   
+    agent {
+        docker {
+            image 'python:3.10-slim'
+            args '-u root:root -v /tmp/jenkins-python-cache:/cache'
+        }
+    }
+
     environment {
         // Repository configuration
         GIT_URL = 'https://github.com/codewithbab015/fnb-dataquest-recosys.git'
         GIT_CREDENTIALS_ID = 'jenkins_access_id'
-       
+
         // MLOps tool configurations
         MLFLOW_TRACKING_URI = 'http://mlflow-server:5000'
+
         // Docker Hub configuration
         DOCKERHUB_CREDENTIALS_ID = 'docker_access_id'
         DOCKER_USERNAME = 'mrbaloyin'
-        DOCKER_IMG = 'recosys-model' //Change the name of the image tag as needed
+        DOCKER_IMG = 'recosys-model'
         VERSION = 'latest'
+
         // Python environment
-        PIP_CACHE_DIR = "${WORKSPACE}/.pip_cache"
         VENV_DIR = "${WORKSPACE}/.venv"
     }
-    
+
     stages {
-        stage("🔄 Source Control") {
+        stage("Source Control") {
             steps {
                 script {
-                    // Load utils library
                     def utilsLib = load "jenkins/utils.groovy"
-                    
-                    // Clone repository
                     utilsLib.cloneRepository(env.GIT_URL, env.GIT_CREDENTIALS_ID)
-                
                 }
-                sh '''#!/bin/env
-                    echo "✅ Repository cloned successfully"
-                    echo "📊 Commit: $(git rev-parse HEAD)"
-                    echo "🌿 Branch: $(git branch --show-current)"
+                sh '''
+                    echo "Repository cloned successfully"
+                    echo "Commit: $(git rev-parse HEAD)"
+                    echo "Branch: $(git branch --show-current)"
                 '''
             }
         }
-       
-        stage("🐍 Setup Python Environment") {
+
+        stage("Setup Python Environment") {
             steps {
                 script {
-                    // Reload utils library (necessary for each stage)
                     def utilsLib = load "jenkins/utils.groovy"
                     utilsLib.pythonEnvironment(env.VENV_DIR)
                 }
             }
         }
     }
-   
+
     post {
         always {
             script {
-                // Archive artifacts only if they exist
                 if (fileExists('reports/')) {
                     archiveArtifacts artifacts: 'reports/**/*', allowEmptyArchive: true
                 }
                 if (fileExists('models/')) {
                     archiveArtifacts artifacts: 'models/**/*', allowEmptyArchive: true
                 }
-                
-                // Publish test results if they exist
+
                 if (fileExists('**/test-results.xml')) {
                     publishTestResults testResultsPattern: '**/test-results.xml'
                 } else {
-                    echo "🟡 No test result files found, skipping test results publishing"
+                    echo "No test result files found. Skipping test results publishing."
                 }
-                
-                // Publish coverage if it exists
+
                 if (fileExists('coverage.xml')) {
                     publishCoverage adapters: [coberturaAdapter('coverage.xml')]
                 } else {
-                    echo "🟡 No coverage report found, skipping coverage publishing"
+                    echo "No coverage report found. Skipping coverage publishing."
                 }
             }
             sh '''
-                echo "🧹 Cleaning up workspace"
-                # Remove virtual environment
-                rm -rf venv || true
-                # Clean up pip cache
-                rm -rf ${PIP_CACHE_DIR} || true
+                echo "Cleaning up workspace"
+                rm -rf .venv || true
+                # Do not remove /cache to preserve pip cache
             '''
         }
-       
+
         success {
-            echo "✅ Pipeline completed successfully!"
+            echo "Pipeline completed successfully."
             sh '''
-                echo "📧 Sending success notification"
-                # Add your notification logic here
+                echo "Sending success notification"
                 # python src/notifications/send_notification.py --status=success
             '''
         }
-       
+
         failure {
-            echo "❌ Pipeline failed!"
+            echo "Pipeline failed."
             sh '''
-                echo "📧 Sending failure notification"
-                # Add your notification logic here
+                echo "Sending failure notification"
                 # python src/notifications/send_notification.py --status=failure
             '''
         }
-       
+
         unstable {
-            echo "⚠️ Pipeline completed with warnings"
+            echo "Pipeline completed with warnings."
             sh '''
-                echo "📧 Sending warning notification"
-                # Add your notification logic here
+                echo "Sending warning notification"
                 # python src/notifications/send_notification.py --status=warning
             '''
         }
