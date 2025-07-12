@@ -1,3 +1,23 @@
+// pipeline {
+//     agent {
+//         docker {
+//             image 'python:3.10-slim'
+//             args '-v jenkins-pip-cache:/root/.cache/pip'
+//         }
+//     }
+//     stages {
+//         stage('Cache Dependencies') {
+//             steps {
+//                 sh '''
+//                     export PIP_CACHE_DIR=/root/.cache/pip
+//                     pip install --upgrade pip
+//                     pip install -r requirements.txt
+//                 '''
+//             }
+//         }
+//     }
+// }
+
 pipeline {
     agent {
         docker {
@@ -5,7 +25,40 @@ pipeline {
             args '-v jenkins-pip-cache:/root/.cache/pip'
         }
     }
+
+    environment {
+        // Repository configuration
+        GIT_URL = 'https://github.com/codewithbab015/fnb-dataquest-recosys.git'
+        GIT_CREDENTIALS_ID = 'jenkins_access_id'
+
+        // MLOps tool configurations
+        MLFLOW_TRACKING_URI = 'http://mlflow-server:5000'
+
+        // Docker Hub configuration
+        DOCKERHUB_CREDENTIALS_ID = 'docker_access_id'
+        DOCKER_USERNAME = 'mrbaloyin'
+        DOCKER_IMG = 'recosys-model'
+        VERSION = 'latest'
+
+        // Python environment
+        VENV_DIR = "${WORKSPACE}/.venv"
+    }
+
     stages {
+        stage("Source Control") {
+            steps {
+                script {
+                    def utilsLib = load "jenkins/utils.groovy"
+                    utilsLib.cloneRepository(env.GIT_URL, env.GIT_CREDENTIALS_ID)
+                }
+                sh '''
+                    echo "Repository cloned successfully"
+                    echo "Commit: $(git rev-parse HEAD)"
+                    echo "Branch: $(git branch --show-current)"
+                '''
+            }
+        }
+
         stage('Cache Dependencies') {
             steps {
                 sh '''
@@ -15,111 +68,75 @@ pipeline {
                 '''
             }
         }
+
+        stage("Setup Python Environment") {
+            steps {
+                script {
+                    sh"python3 --version"
+                }
+            }
+        }
+        // stage("Setup Python Environment") {
+        //     steps {
+        //         script {
+        //             def utilsLib = load "jenkins/utils.groovy"
+        //             utilsLib.pythonEnvironment(env.VENV_DIR)
+        //         }
+        //     }
+        // }
+    }
+
+    post {
+        always {
+            script {
+                if (fileExists('reports/')) {
+                    archiveArtifacts artifacts: 'reports/**/*', allowEmptyArchive: true
+                }
+                if (fileExists('models/')) {
+                    archiveArtifacts artifacts: 'models/**/*', allowEmptyArchive: true
+                }
+
+                if (fileExists('**/test-results.xml')) {
+                    publishTestResults testResultsPattern: '**/test-results.xml'
+                } else {
+                    echo "No test result files found. Skipping test results publishing."
+                }
+
+                if (fileExists('coverage.xml')) {
+                    publishCoverage adapters: [coberturaAdapter('coverage.xml')]
+                } else {
+                    echo "No coverage report found. Skipping coverage publishing."
+                }
+            }
+            sh '''
+                echo "Cleaning up workspace"
+                rm -rf .venv || true
+                # Do not remove /cache to preserve pip cache
+            '''
+        }
+
+        success {
+            echo "Pipeline completed successfully."
+            sh '''
+                echo "Sending success notification"
+                # python src/notifications/send_notification.py --status=success
+            '''
+        }
+
+        failure {
+            echo "Pipeline failed."
+            sh '''
+                echo "Sending failure notification"
+                # python src/notifications/send_notification.py --status=failure
+            '''
+        }
+
+        unstable {
+            echo "Pipeline completed with warnings."
+            sh '''
+                echo "Sending warning notification"
+                # python src/notifications/send_notification.py --status=warning
+            '''
+        }
     }
 }
-
-// pipeline {
-//     agent {
-//         docker {
-//             image 'python:3.10-slim'
-//             args '-u root:root -v /tmp/jenkins-python-cache:/cache'
-//         }
-//     }
-
-//     environment {
-//         // Repository configuration
-//         GIT_URL = 'https://github.com/codewithbab015/fnb-dataquest-recosys.git'
-//         GIT_CREDENTIALS_ID = 'jenkins_access_id'
-
-//         // MLOps tool configurations
-//         MLFLOW_TRACKING_URI = 'http://mlflow-server:5000'
-
-//         // Docker Hub configuration
-//         DOCKERHUB_CREDENTIALS_ID = 'docker_access_id'
-//         DOCKER_USERNAME = 'mrbaloyin'
-//         DOCKER_IMG = 'recosys-model'
-//         VERSION = 'latest'
-
-//         // Python environment
-//         VENV_DIR = "${WORKSPACE}/.venv"
-//     }
-
-//     stages {
-//         stage("Source Control") {
-//             steps {
-//                 script {
-//                     def utilsLib = load "jenkins/utils.groovy"
-//                     utilsLib.cloneRepository(env.GIT_URL, env.GIT_CREDENTIALS_ID)
-//                 }
-//                 sh '''
-//                     echo "Repository cloned successfully"
-//                     echo "Commit: $(git rev-parse HEAD)"
-//                     echo "Branch: $(git branch --show-current)"
-//                 '''
-//             }
-//         }
-
-//         stage("Setup Python Environment") {
-//             steps {
-//                 script {
-//                     def utilsLib = load "jenkins/utils.groovy"
-//                     utilsLib.pythonEnvironment(env.VENV_DIR)
-//                 }
-//             }
-//         }
-//     }
-
-//     post {
-//         always {
-//             script {
-//                 if (fileExists('reports/')) {
-//                     archiveArtifacts artifacts: 'reports/**/*', allowEmptyArchive: true
-//                 }
-//                 if (fileExists('models/')) {
-//                     archiveArtifacts artifacts: 'models/**/*', allowEmptyArchive: true
-//                 }
-
-//                 if (fileExists('**/test-results.xml')) {
-//                     publishTestResults testResultsPattern: '**/test-results.xml'
-//                 } else {
-//                     echo "No test result files found. Skipping test results publishing."
-//                 }
-
-//                 if (fileExists('coverage.xml')) {
-//                     publishCoverage adapters: [coberturaAdapter('coverage.xml')]
-//                 } else {
-//                     echo "No coverage report found. Skipping coverage publishing."
-//                 }
-//             }
-//             sh '''
-//                 echo "Cleaning up workspace"
-//                 rm -rf .venv || true
-//                 # Do not remove /cache to preserve pip cache
-//             '''
-//         }
-
-//         success {
-//             echo "Pipeline completed successfully."
-//             sh '''
-//                 echo "Sending success notification"
-//                 # python src/notifications/send_notification.py --status=success
-//             '''
-//         }
-
-//         failure {
-//             echo "Pipeline failed."
-//             sh '''
-//                 echo "Sending failure notification"
-//                 # python src/notifications/send_notification.py --status=failure
-//             '''
-//         }
-
-//         unstable {
-//             echo "Pipeline completed with warnings."
-//             sh '''
-//                 echo "Sending warning notification"
-//                 # python src/notifications/send_notification.py --status=warning
-//             '''
-//         }
-//     }
-// }
