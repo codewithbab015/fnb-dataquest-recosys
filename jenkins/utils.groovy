@@ -18,14 +18,14 @@ def pythonEnvironment(venv) {
     if (!fileExists("requirements.txt")) {
         error "Requirements file does not exist!"
     }
+   
+    // Create virtual environment
+    sh "python3 -m venv ${venv}"
     
+    // Install dependencies
     sh """
-        echo "🐍 Setting up Python environment"
-        python3 -m venv ${venv}
         source ${venv}/bin/activate
-
-        version=$(python3 --version)
-        echo "Python version: ${version}"
+        python3 --version
         python3 -m pip install --upgrade pip
         pip install -r requirements.txt
         echo "✅ Environment setup complete"
