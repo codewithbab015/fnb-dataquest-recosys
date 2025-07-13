@@ -21,21 +21,12 @@ def pythonEnvironment(String venv) {
     }
 
     sh """#!/bin/bash
-        echo "Creating Python virtual environment at ${venv}"
+        set -e  # Exit on any error
         python3 -m venv ${venv}
-
-        echo "Activating virtual environment"
         source ${venv}/bin/activate
-
-        echo "Setting PIP cache directory to /cache"
         export PIP_CACHE_DIR=/cache
-
-        echo "Upgrading pip"
-        python3 -m pip install --upgrade pip
-
-        echo "Installing Python dependencies from requirements.txt"
-        pip install --cache-dir=\$PIP_CACHE_DIR -r requirements.txt
-
+        python -m pip install --upgrade pip
+        python -m pip install --cache-dir=\$PIP_CACHE_DIR -r requirements.txt
         echo "Python environment setup complete"
     """
 }

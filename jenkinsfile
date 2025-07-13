@@ -23,29 +23,21 @@ pipeline {
     
     stages {
 
-        stage('Load Pipeline Libraries') {
-            steps {
-                script {
-                    def utilsLib = load "jenkins/utils.groovy"
-                    echo "✅ All pipeline libraries loaded successfully"
-                }
-            }
-        }
-
         stage("🔄 Source Control") {
             steps {
                 script {
+                    def utilsLib = load "jenkins/utils.groovy"
                     utilsLib.cloneRepository(env.GIT_URL, env.GIT_CREDENTIALS_ID)
                 }
-                sh '''
-                    echo "✅ Repository cloned successfully"
-                    echo "📊 Commit: $(git rev-parse HEAD)"
-                    echo "🌿 Branch: $(git branch --show-current)"
+                sh '''#!/bin/bash
+                    echo "Repository cloned successfully"
+                    echo "Commit: $(git rev-parse HEAD)"
+                    echo "Branch: $(git branch --show-current)"
                 '''
             }
         }
         
-        stage("Setup Env") {
+        stage("Setup Virtualenv") {
             steps {
                 script{
                      def utilsLib = load "jenkins/utils.groovy"
@@ -78,7 +70,7 @@ pipeline {
                 }
                 stage("Unit Tests") {
                     steps {
-                        sh '''
+                        sh '''#!/bin/bash
                             echo "🧪 Running unit tests"
                             # conda activate ${VENV_DIR}
                             # pytest tests/unit/ -v --junitxml=unit-test-results.xml --cov=src --cov-report=xml
@@ -92,7 +84,7 @@ pipeline {
             stages {
                 stage("Data Validation") {
                     steps {
-                        sh '''
+                        sh '''#!/bin/bash
                             echo "🔍 Validating data quality and schema"
                             # conda activate ${VENV_DIR}
                             # python src/data/validate_data.py
@@ -107,7 +99,7 @@ pipeline {
                 }
                 stage("Data Preprocessing") {
                     steps {
-                        sh '''
+                        sh '''#!/bin/bash
                             echo "🛠️ Preprocessing and feature engineering"
                             # conda activate ${VENV_DIR}
                             # python src/data/preprocess.py
@@ -122,7 +114,7 @@ pipeline {
                 }
                 stage("Data Profiling") {
                     steps {
-                        sh '''
+                        sh '''#!/bin/bash
                             echo "📈 Generating data profile and statistics"
                             # conda activate ${VENV_DIR}
                             # python src/data/profile_data.py
@@ -139,7 +131,7 @@ pipeline {
             stages {
                 stage("Experiment Tracking Setup") {
                     steps {
-                        sh '''
+                        sh '''#!/bin/bash
                             echo "📋 Setting up experiment tracking"
                             # conda activate ${VENV_DIR}
                             # export MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI}
@@ -153,7 +145,7 @@ pipeline {
                     parallel {
                         stage("Baseline Model") {
                             steps {
-                                sh '''
+                                sh '''#!/bin/bash
                                     echo "🏁 Training baseline model"
                                     # conda activate ${VENV_DIR}
                                     # python src/models/train_baseline.py
@@ -162,7 +154,7 @@ pipeline {
                         }
                         stage("Advanced Models") {
                             steps {
-                                sh '''
+                                sh '''#!/bin/bash
                                     echo "🚀 Training advanced models"
                                     # conda activate ${VENV_DIR}
                                     # python src/models/train_models.py
@@ -173,7 +165,7 @@ pipeline {
                 }
                 stage("Hyperparameter Optimization") {
                     steps {
-                        sh '''
+                        sh '''#!/bin/bash
                             echo "⚙️ Optimizing hyperparameters"
                             # conda activate ${VENV_DIR}
                             # python src/models/hyperparameter_tuning.py
@@ -185,7 +177,7 @@ pipeline {
                 }
                 stage("Cross Validation") {
                     steps {
-                        sh '''
+                        sh '''#!/bin/bash
                             echo "🔄 Performing cross-validation"
                             # conda activate ${VENV_DIR}
                             # python src/models/cross_validation.py
@@ -202,7 +194,7 @@ pipeline {
             stages {
                 stage("Model Evaluation") {
                     steps {
-                        sh '''
+                        sh '''#!/bin/bash
                             echo "📊 Evaluating model performance"
                             # conda activate ${VENV_DIR}
                             # python src/models/evaluate_model.py
@@ -214,7 +206,7 @@ pipeline {
                 }
                 stage("Model Interpretability") {
                     steps {
-                        sh '''
+                        sh '''#!/bin/bash
                             echo "🔍 Analyzing model interpretability"
                             # conda activate ${VENV_DIR}
                             # python src/models/explain_model.py
@@ -226,7 +218,7 @@ pipeline {
                 }
                 stage("Bias & Fairness Testing") {
                     steps {
-                        sh '''
+                        sh '''#!/bin/bash
                             echo "⚖️ Testing for bias and fairness"
                             # conda activate ${VENV_DIR}
                             # python src/models/bias_testing.py
@@ -240,7 +232,7 @@ pipeline {
                     parallel {
                         stage("Batch Predictions") {
                             steps {
-                                sh '''
+                                sh '''#!/bin/bash
                                     echo "📦 Testing batch predictions"
                                     # conda activate ${VENV_DIR}
                                     # python src/models/test_batch_predictions.py
@@ -252,7 +244,7 @@ pipeline {
                         }
                         stage("Real-time Predictions") {
                             steps {
-                                sh '''
+                                sh '''#!/bin/bash
                                     echo "⚡ Testing real-time predictions"
                                     # conda activate ${VENV_DIR}
                                     # python src/models/test_realtime_predictions.py
@@ -269,7 +261,7 @@ pipeline {
         
         stage("🏆 Model Selection & Registration") {
             steps {
-                sh '''
+                sh '''#!/bin/bash
                     echo "🎯 Selecting best model and registering"
                     # conda activate ${VENV_DIR}
                     # export MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI}
@@ -290,7 +282,7 @@ pipeline {
             stages {
                 stage("Model Packaging") {
                     steps {
-                        sh '''
+                        sh '''#!/bin/bash
                             echo "📦 Packaging model for deployment"
                             # conda activate ${VENV_DIR}
                             
@@ -304,7 +296,7 @@ pipeline {
                 }
                 stage("Staging Deployment") {
                     steps {
-                        sh '''
+                        sh '''#!/bin/bash
                             echo "🎭 Deploying to staging environment"
                             # conda activate ${VENV_DIR}
                             
@@ -318,7 +310,7 @@ pipeline {
                 }
                 stage("Integration Testing") {
                     steps {
-                        sh '''
+                        sh '''#!/bin/bash
                             echo "🔗 Running integration tests"
                             # conda activate ${VENV_DIR}
                             
@@ -339,7 +331,7 @@ pipeline {
                             // Add approval step for production deployment
                             input message: 'Deploy to production?', ok: 'Deploy'
                         }
-                        sh '''
+                        sh '''#!/bin/bash
                             echo "🌟 Deploying to production"
                             # conda activate ${VENV_DIR}
                             
