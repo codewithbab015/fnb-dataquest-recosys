@@ -24,14 +24,14 @@ from sklearn.preprocessing import LabelEncoder
 from xgboost import XGBClassifier
 
 
-def setup_logging() -> logging.Logger:
+def setup_logging(verbose: bool = False) -> logging.Logger:
     """Configure logging for the ML pipeline."""
     log_dir = Path("logs")
     log_dir.mkdir(exist_ok=True)
-    log_file = log_dir / "ml_pipeline.log"
+    log_file = log_dir / "training.log"
 
     logging.basicConfig(
-        level=logging.INFO,
+        level=logging.DEBUG if verbose else logging.INFO,
         format="%(asctime)s - %(levelname)s - %(message)s",
         handlers=[
             logging.StreamHandler(),
@@ -41,10 +41,7 @@ def setup_logging() -> logging.Logger:
     return logging.getLogger(__name__)
 
 
-logger = setup_logging()
-
-
-model_level_logger = logging.getLogger(__name__)
+logger = setup_logging(True)
 
 
 # Data Loading and Preprocessing
@@ -77,7 +74,7 @@ def prepare_train_test_data(
 def validate_data_path(filepath: Path) -> bool:
     """Validate that data file exists."""
     if not filepath.exists():
-        logger.error(f"Data file does not exist: {filepath}")
+        print(f"Data file does not exist: {filepath}")
         return False
     return True
 
@@ -107,9 +104,10 @@ def save_model_artifacts(
     metadata: Dict,
     classifier_title: str,
     report_df: pd.DataFrame,
+    filepath: str,
 ) -> Tuple[Path, Path, Path]:
     """Save model, metadata, and classification report."""
-    model_dir = Path("models/classifiers")
+    model_dir = Path(filepath)
     model_dir.mkdir(parents=True, exist_ok=True)
 
     # Save model
@@ -123,15 +121,14 @@ def save_model_artifacts(
     report_path = model_dir / f"report_{classifier_title}.csv"
     report_df.to_csv(report_path, index=False)
 
-    logger.info(f"Saved {classifier_title} artifacts to: {model_dir}")
+    print(f"Saved {classifier_title} artifacts to: {model_dir}")
     return model_path, meta_path, report_path
 
 
 def save_feature_importance_plot(
     classifier: ClassifierMixin,
     X_train: pd.DataFrame,
-    classifier_title: str,
-    version: float,
+    filepath: str,
     top_n: int = 20,
 ) -> pd.Series:
     """Save feature importance plot if model supports it."""
@@ -149,14 +146,11 @@ def save_feature_importance_plot(
     # Create and save plot
     plt.style.use("ggplot")
     plt.figure(figsize=(10, 6))
-    feat_imp.head(top_n).plot(
-        kind="barh", title=f"Top {top_n} Feature Importances - {classifier_title}"
-    )
+    feat_imp.head(top_n).plot(kind="barh", title=f"Top {top_n} Feature Importances")
     plt.gca().invert_yaxis()
     plt.tight_layout()
 
-    plot_path = f"{classifier_title}_feature_importance_v{version}.png"
-    plt.savefig(plot_path, dpi=300, bbox_inches="tight")
+    plt.savefig(filepath, dpi=250, bbox_inches="tight")
     plt.close()
 
     return feat_imp
@@ -177,15 +171,16 @@ class ModelTrainer:
     y_train: Union[np.ndarray, pd.Series]
     y_test: Union[np.ndarray, pd.Series]
     data_size: int
-    version: float = 0.1
+    path: str
     decimal_places: int = 3
 
     def train_and_evaluate(self) -> Dict:
         """Train model and return evaluation metrics."""
         title = pascal_to_snake(self.classifier.__class__.__name__)
         classifier_title = curate_model_name(title)
+        filepath_output = self.path
 
-        logger.info(f"Training {classifier_title} model...")
+        print(f"Training {classifier_title} model...")
 
         # Cross-validation
         skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
@@ -209,8 +204,9 @@ class ModelTrainer:
         metrics["cv_f1_weighted"] = np.round(cv_scores.mean(), self.decimal_places)
 
         # Feature importance
+        feat_imp_title = Path(filepath_output) / f"feat_plot_{classifier_title}.png"
         feat_imp = save_feature_importance_plot(
-            self.classifier, self.X_train, classifier_title, self.version
+            self.classifier, self.X_train, feat_imp_title
         )
 
         # Classification report
@@ -229,7 +225,7 @@ class ModelTrainer:
 
         # Save artifacts
         model_path, meta_path, report_path = save_model_artifacts(
-            self.classifier, metadata, classifier_title, report_df
+            self.classifier, metadata, classifier_title, report_df, filepath_output
         )
 
         enriched_metadata = {
@@ -295,7 +291,7 @@ class ModelTrainer:
 
         # Print detailed classification report
         print(f"\n{classifier_title.upper()} Classification Report:")
-        print(classification_report(self.y_test, test_pred))
+        logger.info(classification_report(self.y_test, test_pred))
 
 
 # Model Configuration
@@ -358,12 +354,13 @@ def train_model(
     y_train: np.ndarray,
     y_test: np.ndarray,
     data_size: int,
+    filepath: str,
 ) -> Dict:
     """Train single model and return results."""
     model = get_model_configs().get(model_title)
     results = {}
     logger.info(f"\nTraining {model_title}...")
-    trainer = ModelTrainer(model, X_train, X_test, y_train, y_test, data_size)
+    trainer = ModelTrainer(model, X_train, X_test, y_train, y_test, data_size, filepath)
     results[model_title] = trainer.train_and_evaluate()
 
     return results
@@ -395,17 +392,19 @@ def parse_cli_arguments() -> Namespace:
         help="Model to train (only used when mode='single')",
     )
 
-    # Verbose output option
-    parser.add_argument(
-        "--verbose", "-v", action="store_true", help="Enable verbose output"
-    )
-
-    # Optional: Add data path as argument
+    # Add data path as argument
     parser.add_argument(
         "--data-path",
         type=Path,
         default=Path("data/training/train.csv"),
         help="Path to training data file",
+    )
+    # Add model path as argument
+    parser.add_argument(
+        "--out",
+        type=Path,
+        default=Path("models/classifier"),
+        help="Path to model output files",
     )
 
     return parser.parse_args()
@@ -438,72 +437,61 @@ def save_metadata(results: dict, model_name: str, debug: bool = False) -> None:
 
 def main() -> None:
     """Main ML pipeline execution."""
-
-    def setup_logging(verbose: bool = False) -> None:
-        """Configure logging based on verbosity level."""
-        level = logging.DEBUG if verbose else logging.INFO
-        logging.basicConfig(
-            level=level, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-        )
-
     # Parse CLI arguments first
     args = parse_cli_arguments()
 
     # Validate argument combinations
     validate_arguments(args)
 
-    # Setup logging
-    setup_logging(args.verbose)
-
     try:
         # Setup data path
         data_path = args.data_path
-        model_level_logger.info(f"Using data path: {data_path}")
+        logger.info(f"Using data path: {data_path}")
 
         # Validate data exists
         if not validate_data_path(data_path):
-            model_level_logger.error(f"Data validation failed for path: {data_path}")
+            logger.error(f"Data validation failed for path: {data_path}")
             return
 
         # Load and process data
-        model_level_logger.info(f"Loading data from: {data_path}")
+        logger.info(f"Loading data from: {data_path}")
         data = load_data(data_path)
-        model_level_logger.info(f"Data shape: {data.shape}")
+        logger.info(f"Data shape: {data.shape}")
 
         # Prepare train/test sets
         X_train, X_test, y_train, y_test = prepare_train_test_data(data)
-        model_level_logger.info(f"Training set size: {X_train.shape[0]}")
-        model_level_logger.info(f"Test set size: {X_test.shape[0]}")
+        logger.info(f"Training set size: {X_train.shape[0]}")
+        logger.info(f"Test set size: {X_test.shape[0]}")
 
         # Train models based on mode
         if args.mode == "all":
-            model_level_logger.info("Training all models...")
+            logger.info("Training all models...")
             results = train_multiple_models(X_train, X_test, y_train, y_test, len(data))
         elif args.mode == "single":
-            model_level_logger.info(f"Training single model: {args.model}")
+            logger.info(f"Training single model: {args.model}")
             results = train_model(
-                args.model, X_train, X_test, y_train, y_test, len(data)
+                args.model, X_train, X_test, y_train, y_test, len(data), args.out
             )
             # save_metadata(results, args.model)
             save_metadata(results, args.model, debug=True)
         else:
             raise ValueError(f"Unsupported mode: {args.mode}. Options: [single, all]")
 
-        model_level_logger.info("ML pipeline completed successfully!")
+        logger.info("ML pipeline completed successfully!")
 
         # log results summary
         # print(json.dumps(results, indent=3))
         if args.verbose and results:
-            model_level_logger.debug(f"Training results: {results}")
+            logger.debug(f"Training results: {results}")
 
     except FileNotFoundError as e:
-        model_level_logger.error(f"Data file not found: {e}")
+        logger.error(f"Data file not found: {e}")
         raise
     except ValueError as e:
-        model_level_logger.error(f"Invalid parameter: {e}")
+        logger.error(f"Invalid parameter: {e}")
         raise
     except Exception as e:
-        model_level_logger.error(f"Pipeline failed: {str(e)}")
+        logger.error(f"Pipeline failed: {str(e)}")
         raise
 
 
