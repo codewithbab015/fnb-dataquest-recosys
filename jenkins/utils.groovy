@@ -3,7 +3,7 @@
 */
 
 // Clone the Git repository using provided credentials and branch (default: main)
-def cloneRepository(gitUrl, credentialsId, branch = '*/main') {
+def cloneRepository(String gitUrl, String credentialsId, String branch = '*/main') {
     checkout([
         $class: 'GitSCM',
         branches: [[name: branch]],
