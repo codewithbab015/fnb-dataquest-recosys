@@ -30,3 +30,9 @@ repos:
     hooks:
       - id: bandit
         args: ["-r", "."]
+
+  # pip-audit for Python dependency CVE scan
+  - repo: https://github.com/pypa/pip-audit
+    rev: v2.7.2
+    hooks:
+      - id: pip-audit
