@@ -9,4 +9,6 @@ scikit-learn
 # fastparquet
 # dvc[all]
 # mlflow
+# bandit
+# ruff
 

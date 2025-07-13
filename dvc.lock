@@ -1,7 +1,7 @@
 schema: '2.0'
 stages:
   process:
-    cmd: python src/engineer/process.py --raw 'data/raw/dq_recsys_challenge_2025(in).csv'
+    cmd: python src/engineering/process.py --raw 'data/raw/dq_recsys_challenge_2025(in).csv'
       --process data/processed/processed_fnb.csv
     deps:
     - path: data/raw/dq_recsys_challenge_2025(in).csv
@@ -9,7 +9,7 @@ stages:
       md5: a058b15deb247d03857332f52c0210a2
       size: 35385393
       isexec: true
-    - path: src/engineer/process.py
+    - path: src/engineering/process.py
       hash: md5
       md5: 0e5f8c413a22919d41f5f774d184efc7
       size: 7906
@@ -21,7 +21,7 @@ stages:
       size: 394282
       isexec: true
   feature:
-    cmd: python src/engineer/feature.py --process data/processed/processed_fnb.csv
+    cmd: python src/engineering/feature.py --process data/processed/processed_fnb.csv
       --train data/training/train.csv --test data/training/test.csv
     deps:
     - path: data/processed/processed_fnb.csv
@@ -29,7 +29,7 @@ stages:
       md5: ef7015e9dee42014b88bc01155bea545
       size: 394282
       isexec: true
-    - path: src/engineer/feature.py
+    - path: src/engineering/feature.py
       hash: md5
       md5: 97793ce8e818517dad31979256ae6398
       size: 9905

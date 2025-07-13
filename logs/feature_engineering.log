@@ -1,0 +1,11 @@
+2025-07-13 10:18:45,734 - INFO - Process Path: /mnt/d/research-workspace/workx-projects/unified-devopsx/fnb-dataquest-recosys/data/processed/processed_fnb.csv
+2025-07-13 10:18:45,735 - INFO - Train Path: /mnt/d/research-workspace/workx-projects/unified-devopsx/fnb-dataquest-recosys/data/training/train.csv
+2025-07-13 10:18:45,736 - INFO - Test Path: /mnt/d/research-workspace/workx-projects/unified-devopsx/fnb-dataquest-recosys/data/training/test.csv
+2025-07-13 10:18:45,737 - INFO - Starting feature engineering pipeline...
+2025-07-13 10:18:45,737 - INFO - Loading data from: /mnt/d/research-workspace/workx-projects/unified-devopsx/fnb-dataquest-recosys/data/processed/processed_fnb.csv
+2025-07-13 10:18:46,090 - INFO - Feature engineering completed. Final shape: (2539, 42)
+2025-07-13 10:18:46,092 - INFO - Creating train/test splits...
+2025-07-13 10:18:46,226 - INFO - Train size: 2,031 | Test size: 508
+2025-07-13 10:18:46,226 - INFO - Saved train data to: /mnt/d/research-workspace/workx-projects/unified-devopsx/fnb-dataquest-recosys/data/training/train.csv
+2025-07-13 10:18:46,227 - INFO - Saved test data to: /mnt/d/research-workspace/workx-projects/unified-devopsx/fnb-dataquest-recosys/data/training/test.csv
+2025-07-13 10:18:46,227 - INFO - Feature engineering pipeline completed successfully!

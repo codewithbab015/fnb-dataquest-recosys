@@ -1,18 +1,18 @@
 stages:
   process:
-    cmd: python src/engineer/process.py --raw 'data/raw/dq_recsys_challenge_2025(in).csv'
+    cmd: python src/engineering/process.py --raw 'data/raw/dq_recsys_challenge_2025(in).csv'
       --process data/processed/processed_fnb.csv
     deps:
     - data/raw/dq_recsys_challenge_2025(in).csv
-    - src/engineer/process.py
+    - src/engineering/process.py
     outs:
     - data/processed/processed_fnb.csv
   feature:
-    cmd: python src/engineer/feature.py --process data/processed/processed_fnb.csv
+    cmd: python src/engineering/feature.py --process data/processed/processed_fnb.csv
       --train data/training/train.csv --test data/training/test.csv
     deps:
     - data/processed/processed_fnb.csv
-    - src/engineer/feature.py
+    - src/engineering/feature.py
     outs:
     - data/training/test.csv
     - data/training/train.csv
