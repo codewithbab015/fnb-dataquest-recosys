@@ -1,12 +1,12 @@
-xgboost
-lightgbm
+# xgboost
+# lightgbm
 scikit-learn
-pandas
-numpy
-matplotlib
-seaborn
-optuna
-fastparquet
-dvc[all]
-mlflow
+# pandas
+# numpy
+# matplotlib
+# seaborn
+# optuna
+# fastparquet
+# dvc[all]
+# mlflow
 
