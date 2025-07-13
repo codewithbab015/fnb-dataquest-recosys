@@ -15,12 +15,12 @@ def cloneRepository(gitUrl, credentialsId, branch = '*/main') {
 }
 
 // Set up Python virtual environment and install dependencies using pip cache
-def pythonEnvironment(venv) {
+def pythonEnvironment(String venv) {
     if (!fileExists("requirements.txt")) {
         error "The requirements.txt file is missing. Unable to set up Python environment."
     }
 
-    sh """
+    sh """#!/bin/bash
         echo "Creating Python virtual environment at ${venv}"
         python3 -m venv ${venv}
 
@@ -39,6 +39,10 @@ def pythonEnvironment(venv) {
         echo "Python environment setup complete"
     """
 }
+
+return this
+
+
 
 return this
 
