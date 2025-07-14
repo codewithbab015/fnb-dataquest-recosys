@@ -16,3 +16,15 @@ stages:
     outs:
     - data/training/test.csv
     - data/training/train.csv
+  trainer:
+    cmd: python src/training/run_trainer.py --data-path data/training/train.csv --output
+      models/classifier
+    deps:
+    - data/training/train.csv
+    - src/training/run_trainer.py
+    params:
+    - src/training/model.params.yml:
+      - train.mode
+      - train.model
+    outs:
+    - models/classifier

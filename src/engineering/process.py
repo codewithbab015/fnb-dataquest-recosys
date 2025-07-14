@@ -119,7 +119,7 @@ def create_visualizations(data: pd.DataFrame) -> None:
         plt.gca().invert_yaxis()
         plt.xlabel("Count")
         plt.ylabel(feature.replace("_", " ").title())
-        plt.title(title or f'Top {top_n} {feature.replace("_", " ").title()}')
+        plt.title(title or f"Top {top_n} {feature.replace('_', ' ').title()}")
         plt.tight_layout()
         plt.show()
 
@@ -131,7 +131,7 @@ def create_visualizations(data: pd.DataFrame) -> None:
         order = df[feature].value_counts().index
         sns.countplot(data=df, x=feature, order=order, palette=palette)
         plt.xlabel(feature.replace("_", " ").title())
-        plt.title(f'Distribution of {feature.replace("_", " ").title()}')
+        plt.title(f"Distribution of {feature.replace('_', ' ').title()}")
         plt.xticks(rotation=45)
         plt.tight_layout()
         plt.show()

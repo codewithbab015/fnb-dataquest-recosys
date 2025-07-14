@@ -16,3 +16,5 @@ dvc_store_local/
 notebooks/
 __pycache__/
 jenkinsfile copy
+.ruff_cache
+mlruns/

@@ -1,0 +1,4 @@
+---
+train:
+  mode: !!str single
+  model: !!str logistic_regression

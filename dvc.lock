@@ -11,8 +11,8 @@ stages:
       isexec: true
     - path: src/engineering/process.py
       hash: md5
-      md5: 0e5f8c413a22919d41f5f774d184efc7
-      size: 7906
+      md5: 0b487f10556f3a505935100d942df1fd
+      size: 8264
       isexec: true
     outs:
     - path: data/processed/processed_fnb.csv
@@ -31,8 +31,8 @@ stages:
       isexec: true
     - path: src/engineering/feature.py
       hash: md5
-      md5: 97793ce8e818517dad31979256ae6398
-      size: 9905
+      md5: 773c6f71a86847e48dc3ac48353c1ece
+      size: 10176
       isexec: true
     outs:
     - path: data/training/test.csv
@@ -45,3 +45,27 @@ stages:
       md5: 2f90e497a25b989fd8c5ac05a91ea800
       size: 439548
       isexec: true
+  trainer:
+    cmd: python src/training/run_trainer.py --data-path data/training/train.csv --output
+      models/classifier
+    deps:
+    - path: data/training/train.csv
+      hash: md5
+      md5: 2f90e497a25b989fd8c5ac05a91ea800
+      size: 439548
+      isexec: true
+    - path: src/training/run_trainer.py
+      hash: md5
+      md5: 1cc17af074862b2c3d8ef389eaf317ff
+      size: 10671
+      isexec: true
+    params:
+      src/training/model.params.yml:
+        train.mode: single
+        train.model: logistic_regression
+    outs:
+    - path: models/classifier
+      hash: md5
+      md5: 1f2f1e8381f6b3ec3e603f20bab97406.dir
+      size: 3776
+      nfiles: 3
