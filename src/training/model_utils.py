@@ -95,10 +95,9 @@ def curate_model_name(title: str) -> str:
 
 def save_model_artifacts(
     model: ClassifierMixin,
-    metadata: Dict,
     classifier_title: str,
     report_df: pd.DataFrame,
-    filepath: str,
+    filepath: Path,
 ) -> Tuple[Path, Path, Path]:
     """Save model, metadata, and classification report."""
     model_dir = Path(filepath)
@@ -122,7 +121,7 @@ def save_model_artifacts(
 def save_feature_importance_plot(
     classifier: ClassifierMixin,
     X_train: pd.DataFrame,
-    filepath: str,
+    filepath: Path,
     top_n: int = 20,
 ) -> pd.Series:
     """Save feature importance plot if model supports it."""

@@ -1,4 +1,4 @@
 ---
 train:
   mode: !!str single
-  model: !!str logistic_regression
+  model: !!str random_forest

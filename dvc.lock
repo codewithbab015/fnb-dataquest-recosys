@@ -11,7 +11,7 @@ stages:
       isexec: true
     - path: src/engineering/process.py
       hash: md5
-      md5: 0b487f10556f3a505935100d942df1fd
+      md5: 7bd382bb8641e77df0a8fda79419bc57
       size: 8264
       isexec: true
     outs:
@@ -56,16 +56,16 @@ stages:
       isexec: true
     - path: src/training/run_trainer.py
       hash: md5
-      md5: 1cc17af074862b2c3d8ef389eaf317ff
-      size: 10671
+      md5: f208ae28e85d5870a039a801707d2724
+      size: 13266
       isexec: true
     params:
       src/training/model.params.yml:
         train.mode: single
-        train.model: logistic_regression
+        train.model: random_forest
     outs:
     - path: models/classifier
       hash: md5
-      md5: 1f2f1e8381f6b3ec3e603f20bab97406.dir
-      size: 3776
-      nfiles: 3
+      md5: f119d2d356fd33a3d009624e3fbaa35f.dir
+      size: 6420014
+      nfiles: 4

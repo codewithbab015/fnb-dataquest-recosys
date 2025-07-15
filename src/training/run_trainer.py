@@ -5,6 +5,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, Union
 
+from mlflow import MlflowClient
+import dvc.api
+import mlflow
+from mlflow.models import infer_signature
 import numpy as np
 import pandas as pd
 from model_utils import (
@@ -40,7 +44,7 @@ class ModelTrainer:
     y_train: Union[np.ndarray, pd.Series]
     y_test: Union[np.ndarray, pd.Series]
     data_size: int
-    path: str
+    path: Path
     decimal_places: int = 3
 
     def _calculate_metrics(
@@ -98,7 +102,6 @@ class ModelTrainer:
         """Train model and return evaluation metrics."""
         title = pascal_to_snake(self.classifier.__class__.__name__)
         classifier_title = curate_model_name(title)
-        filepath_output = self.path
 
         print(f"Training {classifier_title} model...")
 
@@ -124,7 +127,7 @@ class ModelTrainer:
         metrics["cv_f1_weighted"] = np.round(cv_scores.mean(), self.decimal_places)
 
         # Feature importance
-        feat_imp_title = Path(filepath_output) / f"feat_plot_{classifier_title}.png"
+        feat_imp_title = self.path / f"feat_plot_{classifier_title}.png"
         feat_imp = save_feature_importance_plot(
             self.classifier, self.X_train, feat_imp_title
         )
@@ -144,7 +147,7 @@ class ModelTrainer:
 
         # Save artifacts
         model_path, meta_path, report_path = save_model_artifacts(
-            self.classifier, metadata, classifier_title, report_df, filepath_output
+            self.classifier, classifier_title, report_df, self.path
         )
 
         enriched_metadata = {
@@ -159,7 +162,7 @@ class ModelTrainer:
         # Log results
         self._log_results(classifier_title, metrics, test_pred)
 
-        return enriched_metadata
+        return self.classifier, enriched_metadata
 
 
 def train_multiple_models(
@@ -179,9 +182,9 @@ def train_multiple_models(
         trainer = ModelTrainer(
             model, X_train, X_test, y_train, y_test, data_size, version
         )
-        results[name] = trainer.train_and_evaluate()
+        model, results[name] = trainer.train_and_evaluate()
 
-    return results
+    return model, results
 
 
 def train_model(
@@ -191,37 +194,23 @@ def train_model(
     y_train: np.ndarray,
     y_test: np.ndarray,
     data_size: int,
-    filepath: str,
+    filepath: Path,
 ) -> Dict:
     """Train single model and return results."""
     model = get_model_configs().get(model_title)
     results = {}
     logger.info(f"\nTraining {model_title}...")
     trainer = ModelTrainer(model, X_train, X_test, y_train, y_test, data_size, filepath)
-    results[model_title] = trainer.train_and_evaluate()
+    model, results[model_title] = trainer.train_and_evaluate()
 
-    return results
+    # TODO: Add Mlflow here ...
+
+    return model, results
 
 
 def parse_cli_arguments() -> Namespace:
     """Parse command-line arguments for model training execution."""
     parser = ArgumentParser(description="Model training CLI")
-
-    # Training mode
-    # parser.add_argument(
-    #     "--mode",
-    #     choices=["single", "all"],
-    #     default="single",
-    #     help="Training execution mode: 'single' for one model, 'all' for all models",
-    # )
-
-    # Model selection (only relevant for single mode)
-    # parser.add_argument(
-    #     "--model",
-    #     choices=["logistic_regression", "xgboost", "random_forest", "lightgbm"],
-    #     default="logistic_regression",
-    #     help="Model to train (only used when mode='single')",
-    # )
 
     # Add data path as argument
     parser.add_argument(
@@ -239,12 +228,6 @@ def parse_cli_arguments() -> Namespace:
     )
 
     return parser.parse_args()
-
-
-# def validate_arguments(mode: str, model: str) -> None:
-#     """Validate argument combinations and warn about unused options."""
-#     if mode == "all":
-#         logger.warning(f"--model argument '{model}' ignored when mode='all'")
 
 
 def save_metadata(results: dict, model_name: str, debug: bool = False) -> None:
@@ -266,28 +249,84 @@ def save_metadata(results: dict, model_name: str, debug: bool = False) -> None:
         json.dump(results, f, indent=4)
 
 
+def create_exp(exp_name: str = "RecoSysML", port: str = "8083") -> None:
+    """Create an MLflow experiment for the recommendation system."""
+    print("Creatig Mlflow experiment: ", exp_name)
+    client = MlflowClient(tracking_uri=f"http://127.0.0.1:{port}")
+
+    description = "This is the recommendation system to personalise user's offers."
+
+    exp_tags = {
+        "project_name": "personalized recommendation system",
+        "mlflow.note.content": description,
+    }
+
+    def find_experiment(exp_name: str = "Default") -> bool:
+        """Check if experiment exists."""
+        all_experiments = client.search_experiments()
+
+        for experiment in all_experiments:
+            if experiment.name == exp_name:
+                return True
+
+        return False
+
+    # Check if experiment already exists
+    if find_experiment(exp_name):
+        print(f"Experiment '{exp_name}' already exists!")
+    else:
+        # Create the experiment
+        artifact_location = Path.cwd().joinpath("mlruns").as_uri()
+        experiment_id = client.create_experiment(
+            name=exp_name, tags=exp_tags, artifact_location=artifact_location
+        )
+
+        print(f"Created experiment '{exp_name}' with ID: {experiment_id}")
+
+
+def flatten_metrics(results: dict) -> dict:
+    """Flatten nested metrics dictionary for MLflow logging."""
+    sub_results = next(iter(results.values()))
+    metadata = sub_results["metadata"]
+    metrics = {}
+    metrics["data-size"] = float(metadata["data_size"])
+
+    for name, value in metadata["metrics"].items():
+        if isinstance(value, dict):
+            train, test = list(value.values())
+            metrics[f"train.{name}"] = train
+            metrics[f"test.{name}"] = test
+        else:
+            metrics[name] = value
+
+    return metrics
+
+
 def main() -> None:
     """Main ML pipeline execution."""
-    import dvc.api
 
+    # Load DVC parameters
     params = dvc.api.params_show()
-    print(params)
-
     model = params["train"]["model"]
     mode = params["train"]["mode"]
-    # print(model, mode)
-    # Parse CLI arguments first
-    args = parse_cli_arguments()
 
-    # # Validate argument combinations
-    # validate_arguments(args)
+    # Parse CLI arguments
+    args = parse_cli_arguments()
+    model_path = Path(args.output)
+    model_path.mkdir(parents=True, exist_ok=True)
+
+    # MLFlow Tracking setup
+    port = "8084"
+    exp_name = "RecoSysML"
+    create_exp(exp_name, port)
+    mlflow.set_tracking_uri(f"http://127.0.0.1:{port}")
+    mlflow.set_experiment(exp_name)
 
     try:
-        # Setup data path
+        # Setup and validate data path
         data_path = args.data_path
         logger.info(f"Using data path: {data_path}")
 
-        # Validate data exists
         if not validate_data_path(data_path):
             logger.error(f"Data validation failed for path: {data_path}")
             return
@@ -305,14 +344,43 @@ def main() -> None:
         # Train models based on mode
         if mode.strip() == "all":
             logger.info("Training all models...")
-            results = train_multiple_models(X_train, X_test, y_train, y_test, len(data))
+            trained_model, results = train_multiple_models(
+                X_train, X_test, y_train, y_test, len(data)
+            )
+
         elif mode.strip() == "single":
             logger.info(f"Training single model: {model}")
-            results = train_model(
-                model, X_train, X_test, y_train, y_test, len(data), args.output
+            trained_model, results = train_model(
+                model, X_train, X_test, y_train, y_test, len(data), model_path
             )
-            # save_metadata(results, model)
+
+            # Saving trained model artifacts on local machine
             save_metadata(results, model, debug=True)
+
+            # MLflow experiment logging
+            model_title = "".join(list(results.keys()))
+            artifact_path = f"{model_title}_{exp_name.lower()}"
+
+            metrics = flatten_metrics(results)
+            sub_results = next(iter(results.values()))
+            params = sub_results["metadata"]["params"]
+            report_path = Path(sub_results["paths"]["report"])
+            data_size = float(sub_results["metadata"]["data_size"])
+            signature = infer_signature(X_train, trained_model.predict(X_train))
+
+            with mlflow.start_run(run_name=model_title) as _:
+                mlflow.log_params(params)
+                mlflow.log_metrics(metrics)
+                mlflow.log_metric("data-size", data_size)
+                mlflow.log_artifact(report_path, "classification-report")
+
+                mlflow.sklearn.log_model(
+                    sk_model=trained_model,
+                    input_example=X_train[:5],
+                    signature=signature,
+                    name=artifact_path,
+                )
+
         else:
             raise ValueError(f"Unsupported mode: '{mode}'. Options: [single, all]")
 
